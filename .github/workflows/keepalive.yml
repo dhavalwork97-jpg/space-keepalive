@@ -1,0 +1,22 @@
+name: Keep HF Space Awake
+
+on:
+  schedule:
+    # Every 25 min — safe buffer under HF's 48h sleep threshold,
+    # and under GitHub's occasional cron delay.
+    - cron: "*/25 * * * *"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping private Space with auth
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.HF_TOKEN }}" \
+            "https://dhaval97-verticals-pipeline.hf.space")
+          echo "Space responded with HTTP $STATUS"
+          if [ "$STATUS" -ge 400 ]; then
+            echo "::warning::Space ping returned $STATUS — check the Space is running and HF_TOKEN is valid."
+          fi
